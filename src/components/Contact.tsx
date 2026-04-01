@@ -11,13 +11,38 @@ export function Contact() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+
+    const apiBase = import.meta.env.VITE_EMAIL_API_URL || "http://localhost:4000";
+
+    try {
+      const res = await fetch(`${apiBase}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          subject: form.subject,
+          message: form.message,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSent(true);
+        setForm({ name: "", email: "", subject: "", message: "" });
+      } else {
+        console.error('Email API error:', data);
+        alert('Failed to send message. Please try again later.');
+      }
+    } catch (err) {
+      console.error('Network error sending email:', err);
+      alert('Failed to send message. Please try again later.');
+    } finally {
       setLoading(false);
-      setSent(true);
-    }, 1500);
+    }
   };
 
   return (
@@ -79,7 +104,7 @@ export function Contact() {
               <div className="flex gap-3">
                 {[
                   { icon: <Github size={18} />, href: "https://github.com/Samueladura", label: "GitHub" },
-                  { icon: <Instagram size={18} />, href: "#", label: "Instargram" },
+                  { icon: <Instagram size={18} />, href: "https://www.instagram.com/babayemi_bukunmi", label: "Instargram" },
                   { icon: <Twitter size={18} />, href: "https://x.com/buildwithadura", label: "Twitter" },
                 ].map((social) => (
                   <a
