@@ -26,7 +26,7 @@ const skillCategories = [
       { name: "TypeScript", level: 92 },
       { name: "Tailwind CSS", level: 94 },
       { name: "Vue.js", level: 80 },
-      { name: "Three.js / WebGL", level: 70 },
+      { name: "Angular", level: 70 },
     ],
   },
   {
@@ -38,8 +38,8 @@ const skillCategories = [
     skills: [
       { name: "Node.js / Express", level: 90 },
       { name: "PostgreSQL", level: 84 },
-      { name: "GraphQL", level: 80 },
-      { name: "Python / Django", level: 76 },
+      { name: "MongoDB", level: 80 },
+      { name: "Python", level: 76 },
       { name: "MySQL", level: 74 },
     ],
   },

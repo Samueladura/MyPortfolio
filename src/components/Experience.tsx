@@ -37,9 +37,9 @@ const experiences = [
   },
   {
     type: "education",
-    role: "B.Sc. Software Engineering",
+    role: "B.Sc. Software Engineering(in view)",
     company: "Osun State University",
-    period: "2015 – 2019",
+    period: "2023 – 2027",
     location: "Osogbo, Nigeria",
     description:
       "Graduated with honors. Specialized in Software Engineering. Thesis: \"Adaptive UI Systems Driven by User Behavioral Patterns.\"",
