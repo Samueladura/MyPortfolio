@@ -24,7 +24,7 @@ const projects = [
     title: "Alivio",
     category: "Personalized guidance",
     description:
-      "Everyone experiences stress in different ways. Let Alivio guide you, in a personalized journal experience, to overcome your stress.",
+      "Alivio is a mental wellness app that helps users manage stress through a personalized journal experience. The landing page promotes the app's guided journaling feature to help people overcome stress.",
     image: alivio,
     tags: ["TypeScript", "Storybook", "Figma", "Tailwind"],
     accent: "violet",
@@ -48,7 +48,7 @@ const projects = [
     title: "Gopherscents",
     category: "Developer Tool",
     description:
-      "A cloud-based IDE with live collaboration, AI code suggestions, and one-click environment provisioning. Supports 20+ languages with syntax highlighting.",
+      "GopherScents is a Next.js-based e-commerce web application for selling scented products. It features product browsing, shopping cart, wishlist, user authentication (login/signup with OTP verification), checkout, and order management. Built with Vite, Supabase for backend/auth, and Tailwind CSS for styling",
     image: gopherscents,
     tags: ["Next.js", "My SQL", "Supabase", "Tailwind"],
     accent: "cyan",
