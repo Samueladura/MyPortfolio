@@ -60,7 +60,7 @@ const projects = [
     title: "FinanceOS",
     category: "FinTech",
     description:
-      "A cloud-based IDE with live collaboration, AI code suggestions, and one-click environment provisioning. Supports 20+ languages with syntax highlighting.",
+      "A personal expense tracking application built with React, TypeScript, My SQL  and Tailwind CSS. Features include transaction management, budget tracking, account management, and analytics with visual charts. Uses Supabase for authentication and data storage.",
     image: financeOS,
     tags: ["Next.js", "My SQL", "Supabase", "Tailwind"],
     accent: "cyan",
