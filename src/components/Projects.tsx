@@ -4,6 +4,7 @@ import axiomtracker from "../assets/axiomtracker.png";
 import alivio from "../assets/alivio.png";
 import eStudy from "../assets/eStudy.png";
 import gopherscents from "../assets/gopherscents.png";
+import financeOS from "../assets/financeOS.png";
 
 const projects = [
   {
@@ -54,6 +55,18 @@ const projects = [
     github: "https://github.com/Samueladura/gopherscents",
     external: "https://gopherscents.vercel.app",
   },
+  {
+    id: 5,
+    title: "FinanceOS",
+    category: "FinTech",
+    description:
+      "A cloud-based IDE with live collaboration, AI code suggestions, and one-click environment provisioning. Supports 20+ languages with syntax highlighting.",
+    image: financeOS,
+    tags: ["Next.js", "My SQL", "Supabase", "Tailwind"],
+    accent: "cyan",
+    github: "https://github.com/Samueladura/FinanceOS",
+    external: "https://finance-os-liard.vercel.app",
+  },
 ];
 
 const accentMap: Record<string, { badge: string; link: string; hover: string }> = {
@@ -83,11 +96,11 @@ const FILTERS = ["All", "Web App", "Personalized guidance", "Study App", "Commer
 
 export function Projects() {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [showAll, setShowAll] = useState(false);
 
-  const filtered =
-    activeFilter === "All"
-      ? projects
-      : projects.filter((p) => p.category === activeFilter);
+  const filtered = activeFilter === "All"
+    ? (showAll ? projects : projects.slice(0, 4))
+    : projects.filter((p) => p.category === activeFilter);
 
   return (
     <section
@@ -224,9 +237,12 @@ export function Projects() {
 
         {/* View all */}
         <div className="text-center mt-12">
-          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-300 border border-slate-700 bg-white/4 hover:bg-indigo-500 hover:text-white transition-all duration-200">
-            View All Projects
-            <ArrowRight size={15} />
+          <button 
+            onClick={() => setShowAll(!showAll)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-300 border border-slate-700 bg-white/4 hover:bg-indigo-500 hover:text-white transition-all duration-200"
+          >
+            {showAll ? "Show Less" : "Show All Projects"}
+            <ArrowRight size={15} className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`} />
           </button>
         </div>
       </div>
