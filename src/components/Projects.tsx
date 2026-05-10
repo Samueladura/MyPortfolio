@@ -14,7 +14,7 @@ const projects = [
     description:
       "Smart certificate tracking that keeps your team compliant, certified, and audit-ready. Automated alerts, and real-time compliance dashboards in one powerful platform.",
     image: axiomtracker,
-    tags: ["React", "Supabase", "Node.js", "Tailwind"],
+    tags: ["React", "Supabase", "Node.js/Express", "Tailwind"],
     accent: "indigo",
     github: "https://github.com/Samueladura/axiomtracker",
     external: "https://axiomtracker.vercel.app",
@@ -38,7 +38,7 @@ const projects = [
     description:
       "eStudy is your gateway to a world of limitless learning possibilities. With our cutting-edge eLearning platform, you can explore a vast library of courses, from academic subjects to practical skills, all designed to help you achieve your goals.",
     image: eStudy,
-    tags: ["Next.js", "Prisma", "Stripe", "Redis"],
+    tags: ["Next.js", "Tailwind CSS"],
     accent: "emerald",
     github: "https://github.com/Samueladura/estudy",
     external: "https://e-study-rvys.vercel.app",
@@ -50,7 +50,7 @@ const projects = [
     description:
       "GopherScents is a Next.js-based e-commerce web application for selling scented products. It features product browsing, shopping cart, wishlist, user authentication (login/signup with OTP verification), checkout, and order management. Built with Vite, Supabase for backend/auth, and Tailwind CSS for styling",
     image: gopherscents,
-    tags: ["Next.js", "My SQL", "Supabase", "Tailwind"],
+    tags: ["Next.js", "My SQL", "PHP", "Tailwind CSS"],
     accent: "cyan",
     github: "https://github.com/Samueladura/gopherscents",
     external: "https://gopherscents.vercel.app",
@@ -62,10 +62,10 @@ const projects = [
     description:
       "A personal expense tracking application built with React, TypeScript, My SQL  and Tailwind CSS. Features include transaction management, budget tracking, account management, and analytics with visual charts. Uses Supabase for authentication and data storage.",
     image: financeOS,
-    tags: ["Next.js", "My SQL", "Supabase", "Tailwind"],
+    tags: ["React", "Supabase", "Tailwind"],
     accent: "cyan",
     github: "https://github.com/Samueladura/FinanceOS",
-    external: "https://finance-os-liard.vercel.app",
+    external: "https://finance-os-murex-nine.vercel.app",
   },
 ];
 
