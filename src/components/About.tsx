@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import samuel1 from "../assets/samuel1.png";
+import samuel from "../assets/samuel.png";
 import { Download, Code2, Palette, Zap } from "lucide-react";
 
 const ABOUT_TEXT = `I'm a software designer and developer with over 5 years of experience building products that people love to use. My work spans the full spectrum — from pixel-perfect UI design to architecting scalable backend systems.\n\nI believe great software is built at the intersection of empathy, craftsmanship, and technical excellence. Every project I take on, I bring a designer's eye and an engineer's discipline to ensure the result is both beautiful and bulletproof.\n\nWhen I'm not coding, you'll find me exploring design systems, contributing to open source, or mentoring the next generation of developers.`;
@@ -77,7 +77,7 @@ export function About() {
             <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-indigo-500/30 to-cyan-500/20 blur-xl opacity-50" />
               <div className="relative rounded-2xl overflow-hidden border border-indigo-500/20">
                 <img
-                  src={samuel1}
+                  src={samuel}
                   alt="Samuel – Software Designer & Developer"
                   className="w-full object-cover"
                   style={{ aspectRatio: "4/5" }}
