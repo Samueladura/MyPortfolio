@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { DEFAULT_ACCENT, getSavedAccent, setAccent } from "./theme";
+import { DEFAULT_ACCENT, getSavedAccent, setAccent } from "./Theme";
 
 const bannerArt = `
 ███████╗ █████╗ ███╗   ███╗██╗   ██╗███████╗██╗     
