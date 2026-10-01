@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Mail, MapPin, Send, Github, Instagram, Twitter, CheckCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { Mail, MapPin, Send, Github, Instagram, Twitter, CheckCircle, Calendar, Clock } from "lucide-react";
+import { Magnetic } from "./Magnetic";
 
 export function Contact() {
   const [form, setForm] = useState({
@@ -55,31 +57,55 @@ export function Contact() {
 
       <div className="relative max-w-6xl mx-auto px-6">
         {/* Section label */}
-        <div className="flex items-center gap-3 mb-4">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center gap-3 mb-4"
+        >
           <span className="text-indigo-500 text-xs font-mono tracking-widest">
             05. CONTACT
           </span>
           <div className="h-px w-16 bg-indigo-500/40" />
-        </div>
+        </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left */}
           <div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-4">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-4"
+            >
               Let's Build{" "}
               <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
                 Something
               </span>{" "}
               Great
-            </h2>
+            </motion.h2>
 
-            <p className="text-slate-400 text-base leading-relaxed max-w-sm mb-10">
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-slate-400 text-base leading-relaxed max-w-sm mb-10"
+            >
               Whether you have a project in mind, want to collaborate, or just
               want to say hello, my inbox is always open.
-            </p>
+            </motion.p>
 
             {/* Contact info */}
-            <div className="space-y-4 mb-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="space-y-4 mb-10"
+            >
               {[
                 { icon: <Mail size={18} />, label: "Email", value: "babayemiayomide87@gmail.com" },
                 { icon: <MapPin size={18} />, label: "Location", value: "Remote" },
@@ -94,10 +120,35 @@ export function Contact() {
                   </div>
                 </div>
               ))}
-            </div>
+            </motion.div>
+
+            {/* Availability CTA */}
+            <motion.a
+              href="#"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-3 px-5 py-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/30 transition-all duration-300 mb-10"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <Calendar size={20} />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">Book a Call</div>
+                <div className="text-xs text-slate-500">Schedule a 30-min consultation</div>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-emerald-400 ml-2">
+                <Clock size={12} />
+                Available now
+              </div>
+            </motion.a>
 
             {/* Social */}
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
               <p className="text-xs text-slate-600 uppercase tracking-widest mb-3">
                 Find me on
               </p>
@@ -117,11 +168,17 @@ export function Contact() {
                   </a>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Right – Form */}
-          <div className="rounded-2xl p-8 bg-slate-900/60 border border-slate-800">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="rounded-2xl p-8 bg-slate-900/60 border border-slate-800"
+          >
             {sent ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mb-5 bg-emerald-500/12 border border-emerald-500/30">
@@ -201,26 +258,30 @@ export function Contact() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/30 active:scale-95"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      Send Message
-                    </>
-                  )}
-                </button>
+                <Magnetic strength={0.15}>
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/30"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        Send Message
+                      </>
+                    )}
+                  </motion.button>
+                </Magnetic>
               </form>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

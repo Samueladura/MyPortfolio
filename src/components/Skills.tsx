@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { TiltCard } from "./TiltCard";
 
 const skillCategories = [
   {
@@ -105,52 +107,81 @@ export function Skills() {
 
       <div className="max-w-6xl mx-auto px-6">
         {/* Section label */}
-        <div className="flex items-center gap-3 mb-4">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center gap-3 mb-4"
+        >
           <span className="text-indigo-500 text-xs font-mono tracking-widest">
             02. SKILLS
           </span>
           <div className="h-px w-16 bg-indigo-500/40" />
-        </div>
+        </motion.div>
 
-        <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-4">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-4"
+        >
           Tools &{" "}
           <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
             Expertise
           </span>
-        </h2>
+        </motion.h2>
 
-        <p className="text-slate-400 text-base leading-relaxed max-w-lg mb-16">
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-slate-400 text-base leading-relaxed max-w-lg mb-16"
+        >
           A curated toolkit built over years of shipping real products, from concept to production.
-        </p>
+        </motion.p>
 
         {/* Skill cards grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-14">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="grid md:grid-cols-3 gap-6 mb-14"
+        >
           {skillCategories.map((cat) => (
-            <div
-              key={cat.title}
-              className="rounded-2xl p-6 bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-colors duration-200"
-            >
-              <div className="flex items-center gap-2 mb-6">
-                <div className={`w-2 h-2 rounded-full ${cat.dotColor}`} />
-                <h3 className="text-base font-semibold text-white">{cat.title}</h3>
+            <TiltCard key={cat.title} tiltStrength={4} className="h-full">
+              <div className="h-full rounded-2xl p-6 bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-colors duration-200">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className={`w-2 h-2 rounded-full ${cat.dotColor}`} />
+                  <h3 className="text-base font-semibold text-white">{cat.title}</h3>
+                </div>
+                {cat.skills.map((skill) => (
+                  <SkillBar
+                    key={skill.name}
+                    name={skill.name}
+                    level={skill.level}
+                    barColor={cat.barColor}
+                    glow={cat.glow}
+                    labelColor={cat.labelColor}
+                    animate={animate}
+                  />
+                ))}
               </div>
-              {cat.skills.map((skill) => (
-                <SkillBar
-                  key={skill.name}
-                  name={skill.name}
-                  level={skill.level}
-                  barColor={cat.barColor}
-                  glow={cat.glow}
-                  labelColor={cat.labelColor}
-                  animate={animate}
-                />
-              ))}
-            </div>
+            </TiltCard>
           ))}
-        </div>
+        </motion.div>
 
         {/* Tech tag cloud */}
-        <div className="text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-center"
+        >
           <p className="text-xs text-slate-600 uppercase tracking-widest mb-5">
             Also familiar with
           </p>
@@ -164,7 +195,7 @@ export function Skills() {
               </span>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

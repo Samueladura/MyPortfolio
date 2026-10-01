@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Briefcase, GraduationCap } from "lucide-react";
+import { TiltCard } from "./TiltCard";
 
 const experiences = [
   {
@@ -42,7 +44,7 @@ const experiences = [
     period: "2023 – 2027",
     location: "Osogbo, Nigeria",
     description:
-      "Graduated with honors. Specialized in Software Engineering. Thesis: \"Adaptive UI Systems Driven by User Behavioral Patterns.\"",
+      'Graduated with honors. Specialized in Software Engineering. Thesis: "Adaptive UI Systems Driven by User Behavioral Patterns."',
     tags: ["HCI", "Algorithms", "Systems Design"],
     current: false,
   },
@@ -86,19 +88,31 @@ export function Experience() {
 
       <div className="max-w-6xl mx-auto px-6">
         {/* Section label */}
-        <div className="flex items-center gap-3 mb-4">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center gap-3 mb-4"
+        >
           <span className="text-indigo-500 text-xs font-mono tracking-widest">
             04. EXPERIENCE
           </span>
           <div className="h-px w-16 bg-indigo-500/40" />
-        </div>
+        </motion.div>
 
-        <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-16">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-16"
+        >
           Career{" "}
           <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
             Journey
           </span>
-        </h2>
+        </motion.h2>
 
         <div className="relative">
           {/* Timeline line */}
@@ -106,14 +120,13 @@ export function Experience() {
 
           <div className="space-y-8">
             {experiences.map((exp, i) => (
-              <div
+              <motion.div
                 key={i}
                 ref={(el) => { itemRefs.current[i] = el; }}
-                className="relative lg:pl-20 transition-all duration-700"
-                style={{
-                  opacity: visible[i] ? 1 : 0,
-                  transform: visible[i] ? "translateX(0)" : "translateX(-20px)",
-                }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={visible[i] ? { opacity: 1, x: 0 } : {}}
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+                className="relative lg:pl-20"
               >
                 {/* Timeline dot */}
                 <div
@@ -131,50 +144,52 @@ export function Experience() {
                 </div>
 
                 {/* Card */}
-                <div className="rounded-2xl p-6 bg-slate-950/70 border border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-black/30 transition-all duration-300">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-base font-semibold text-white">
-                          {exp.role}
-                        </h3>
-                        {exp.current && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium text-emerald-400 bg-emerald-500/12 border border-emerald-500/25">
-                            Current
-                          </span>
-                        )}
+                <TiltCard tiltStrength={4} className="h-full">
+                  <div className="h-full rounded-2xl p-6 bg-slate-950/70 border border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-black/30 transition-all duration-300">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-base font-semibold text-white">
+                            {exp.role}
+                          </h3>
+                          {exp.current && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium text-emerald-400 bg-emerald-500/12 border border-emerald-500/25">
+                              Current
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm font-medium text-indigo-400">
+                          {exp.company}
+                        </div>
                       </div>
-                      <div className="text-sm font-medium text-indigo-400">
-                        {exp.company}
+
+                      <div className="flex-shrink-0 text-right">
+                        <div className="text-xs font-mono text-slate-500">
+                          {exp.period}
+                        </div>
+                        <div className="text-xs text-slate-600 mt-0.5">
+                          {exp.location}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0 text-right">
-                      <div className="text-xs font-mono text-slate-500">
-                        {exp.period}
-                      </div>
-                      <div className="text-xs text-slate-600 mt-0.5">
-                        {exp.location}
-                      </div>
+                    <p className="text-sm text-slate-400 leading-relaxed mb-4">
+                      {exp.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2">
+                      {exp.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2.5 py-1 rounded-md text-xs font-mono text-slate-400 bg-indigo-500/7 border border-indigo-500/14"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                     </div>
                   </div>
-
-                  <p className="text-sm text-slate-400 leading-relaxed mb-4">
-                    {exp.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {exp.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2.5 py-1 rounded-md text-xs font-mono text-slate-400 bg-indigo-500/7 border border-indigo-500/14"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                </TiltCard>
+              </motion.div>
             ))}
           </div>
         </div>

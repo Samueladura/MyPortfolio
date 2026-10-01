@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { ExternalLink, Github, ArrowRight } from "lucide-react";
+import { TiltCard } from "./TiltCard";
 import axiomtracker from "../assets/axiomtracker.png";
 import alivio from "../assets/alivio.png";
 import eStudy from "../assets/eStudy.png";
@@ -18,6 +20,7 @@ const projects = [
     accent: "indigo",
     github: "https://github.com/Samueladura/axiomtracker",
     external: "https://axiomtracker.vercel.app",
+    featured: true,
   },
   {
     id: 2,
@@ -30,6 +33,7 @@ const projects = [
     accent: "violet",
     github: "https://github.com/Samueladura/alivio",
     external: "https://alivio-omega.vercel.app",
+    featured: false,
   },
   {
     id: 3,
@@ -42,6 +46,7 @@ const projects = [
     accent: "emerald",
     github: "https://github.com/Samueladura/estudy",
     external: "https://e-study-rvys.vercel.app",
+    featured: false,
   },
   {
     id: 4,
@@ -54,6 +59,7 @@ const projects = [
     accent: "cyan",
     github: "https://github.com/Samueladura/gopherscents",
     external: "https://gopherscents.vercel.app",
+    featured: false,
   },
   {
     id: 5,
@@ -66,6 +72,7 @@ const projects = [
     accent: "cyan",
     github: "https://github.com/Samueladura/FinanceOS",
     external: "https://finance-os-murex-nine.vercel.app",
+    featured: false,
   },
 ];
 
@@ -145,99 +152,111 @@ export function Projects() {
         </div>
 
         {/* Project grid */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="grid md:grid-cols-2 gap-6"
+        >
           {filtered.map((project) => {
             const ac = accentMap[project.accent];
             return (
-              <div
-                key={project.id}
-                className={`group rounded-2xl overflow-hidden bg-slate-900/70 border border-slate-800 ${ac.hover} hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/40 transition-all duration-300`}
-              >
-                {/* Image */}
-                <div className="relative overflow-hidden aspect-video">
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
+              <TiltCard key={project.id} tiltStrength={5}>
+                <div className={`group rounded-2xl overflow-hidden bg-slate-900/70 border border-slate-800 ${ac.hover} transition-all duration-300`}>
+                  {/* Image */}
+                  <div className="relative overflow-hidden aspect-video">
+                    <img
+                      src={project.image}
+                      alt={project.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
 
-                  {/* Category badge */}
-                  <div
-                    className={`absolute top-4 left-4 px-2.5 py-1 rounded-md text-xs font-mono border ${ac.badge}`}
-                  >
-                    {project.category}
+                    {/* Category badge */}
+                    <div
+                      className={`absolute top-4 left-4 px-2.5 py-1 rounded-md text-xs font-mono border ${ac.badge}`}
+                    >
+                      {project.category}
+                    </div>
+
+                    {/* Featured badge */}
+                    {project.featured && (
+                      <div className="absolute top-4 left-4 mt-8 px-2.5 py-1 rounded-md text-xs font-mono border border-amber-500/30 text-amber-400 bg-amber-500/10">
+                        Featured
+                      </div>
+                    )}
+
+                    {/* Action icons */}
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${project.title} GitHub`}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-950/85 text-white border border-slate-700 hover:border-slate-500 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Github size={14} />
+                      </a>
+                      <a
+                        href={project.external}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${project.title} Live site`}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-950/85 text-white border border-slate-700 hover:border-slate-500 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                    </div>
                   </div>
 
-                  {/* Action icons */}
-                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <a
-                      href={project.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${project.title} GitHub`}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-950/85 text-white border border-slate-700 hover:border-slate-500 transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Github size={14} />
-                    </a>
+                  {/* Content */}
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      {project.title}
+                    </h3>
+                    <p className="text-sm text-slate-400 leading-relaxed mb-5">
+                      {project.description}
+                    </p>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mb-5">
+                      {project.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2.5 py-1 rounded-md text-xs font-mono text-slate-400 bg-slate-800 border border-slate-700"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Link */}
                     <a
                       href={project.external}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`${project.title} Live site`}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-950/85 text-white border border-slate-700 hover:border-slate-500 transition-colors"
                       onClick={(e) => e.stopPropagation()}
+                      className={`inline-flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 ${ac.link}`}
                     >
-                      <ExternalLink size={14} />
+                      View Case Study
+                      <ArrowRight
+                        size={14}
+                        className="transition-transform duration-200 group-hover:translate-x-1"
+                      />
                     </a>
                   </div>
                 </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    {project.title}
-                  </h3>
-                  <p className="text-sm text-slate-400 leading-relaxed mb-5">
-                    {project.description}
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    {project.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2.5 py-1 rounded-md text-xs font-mono text-slate-400 bg-slate-800 border border-slate-700"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Link */}
-                  <a
-                    href={project.external}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className={`inline-flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 ${ac.link}`}
-                  >
-                    View Case Study
-                    <ArrowRight
-                      size={14}
-                      className="transition-transform duration-200 group-hover:translate-x-1"
-                    />
-                  </a>
-                </div>
-              </div>
+              </TiltCard>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* View all */}
         <div className="text-center mt-12">
-          <button 
+          <button
             onClick={() => setShowAll(!showAll)}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-300 border border-slate-700 bg-white/4 hover:bg-indigo-500 hover:text-white transition-all duration-200"
           >
