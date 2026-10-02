@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import { Mail, Send, Github, Instagram, Twitter, CheckCircle, Calendar, Clock } from "lucide-react";
 
 const socials = [
-  { icon: <Github size={14} />, host: "github.com/Samueladura", ip: "20.205.243.166", status: "ESTABLISHED", time: "14.2ms" },
-  { icon: <Instagram size={14} />, host: "instagram.com/babayemi_bukunmi", ip: "108.157.14.33", status: "ESTABLISHED", time: "18.5ms" },
-  { icon: <Twitter size={14} />, host: "x.com/buildwithadura", ip: "104.244.42.121", status: "ESTABLISHED", time: "12.1ms" },
+  { icon: <Github size={14} />, host: "github.com/Samueladura", ip: "192.0.2.1", status: "ESTABLISHED", time: "14.2ms" },
+  { icon: <Instagram size={14} />, host: "instagram.com/babayemi_bukunmi", ip: "198.51.100.1", status: "ESTABLISHED", time: "18.5ms" },
+  { icon: <Twitter size={14} />, host: "x.com/buildwithadura", ip: "203.0.113.1", status: "ESTABLISHED", time: "12.1ms" },
   { icon: <Mail size={14} />, host: "mailto:babayemiayomide87@gmail.com", ip: "mail.devbox.io:25", status: "READY", time: "0.0%" },
 ];
 
@@ -127,11 +127,12 @@ export function TerminalContact() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
                   <div>
-                    <label className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
+                    <label htmlFor="contact-name" className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
                       &gt; NAME_IDENTIFIER <span className="text-terminal-green">[REQUIRED]</span>
                     </label>
                     <input
                       type="text"
+                      id="contact-name"
                       value={form.name}
                       required
                       autoComplete="name"
@@ -142,11 +143,12 @@ export function TerminalContact() {
                   </div>
 
                   <div>
-                    <label className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
+                    <label htmlFor="contact-email" className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
                       &gt; RETURN_PAYLOAD_ADDRESS <span className="text-terminal-cyan">[RFC-5322]</span>
                     </label>
                     <input
                       type="email"
+                      id="contact-email"
                       value={form.email}
                       required
                       autoComplete="email"
@@ -157,11 +159,12 @@ export function TerminalContact() {
                   </div>
 
                   <div>
-                    <label className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
+                    <label htmlFor="contact-subject" className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
                       &gt; ROUTING_SUBJECT <span className="text-terminal-green">[REQUIRED]</span>
                     </label>
                     <input
                       type="text"
+                      id="contact-subject"
                       value={form.subject}
                       required
                       placeholder="[ Subject ]"
@@ -171,11 +174,12 @@ export function TerminalContact() {
                   </div>
 
                   <div>
-                    <label className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
+                    <label htmlFor="contact-message" className="block text-xs terminal-font text-terminal-muted mb-1 md:mb-2">
                       &gt; PAYLOAD_STREAM (UTF-8){" "}
                       <span className="text-terminal-muted">[{new Blob([form.message]).size} bytes]</span>
                     </label>
                     <textarea
+                      id="contact-message"
                       rows={4}
                       value={form.message}
                       required

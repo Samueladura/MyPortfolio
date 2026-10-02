@@ -9,14 +9,28 @@ const navLinks = [
   { label: "~/contact", href: "#contact" },
 ];
 
-// Height of the two fixed bars (status bar 48px + tab bar ~61px)
-const HEADER_OFFSET = 112;
-
 export function TerminalNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("hero");
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [headerOffset, setHeaderOffset] = useState(0);
+
+  // Measure the fixed header height dynamically
+  useEffect(() => {
+    const measure = () => {
+      const statusBar = document.querySelector(".status-bar");
+      const tabBar = document.querySelector('[class*="fixed top-12"]');
+      if (statusBar && tabBar) {
+        const statusHeight = statusBar.getBoundingClientRect().height;
+        const tabHeight = tabBar.getBoundingClientRect().height;
+        setHeaderOffset(statusHeight + tabHeight);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   // Scroll spy
   useEffect(() => {
@@ -25,16 +39,15 @@ export function TerminalNavbar() {
       setScrolled(window.scrollY > 40);
       let current = "hero";
       for (const id of ids) {
-        if (id === "hero") continue;
         const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= HEADER_OFFSET + 20) current = id;
+        if (el && el.getBoundingClientRect().top <= headerOffset + 20) current = id;
       }
       setActiveSection(current);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [headerOffset]);
 
   // Clock
   useEffect(() => {
@@ -58,16 +71,16 @@ export function TerminalNavbar() {
   }, []);
 
   const handleNav = (href: string) => {
-    setMobileOpen(false);
-    if (href === "#hero") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-    const el = document.getElementById(href.slice(1));
+    const id = href.slice(1);
+    const el = document.getElementById(id);
     if (!el) return;
-    // Manual offset so the section isn't hidden under the fixed bars
-    const top = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET + 8;
-    window.scrollTo({ top, behavior: "smooth" });
+    setMobileOpen(false);
+    // Delay the scroll until the mobile menu closing animation (250ms) finishes
+    // so getBoundingClientRect() reads the settled layout instead of mid-transition.
+    setTimeout(() => {
+      const top = el.getBoundingClientRect().top + window.scrollY - headerOffset + 8;
+      window.scrollTo({ top, behavior: "smooth" });
+    }, 300);
   };
 
   const formatTime = (date: Date) =>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Copy } from "lucide-react";
 
@@ -105,11 +105,22 @@ const FILTERS = [
   { id: "Commercial website", label: "--cat=commercial" },
 ];
 
+// Used for Tab autocomplete in the CLI
+const CLI_COMMANDS = ["help", "man", "ls -la projects/", "filter ", "sort", "reset", "clear"];
+
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
 export function TerminalProjects() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [showAll, setShowAll] = useState(false);
+  const [tagFilter, setTagFilter] = useState("");
+  const [sortAz, setSortAz] = useState(false);
   const [stats, setStats] = useState<GitHubStats>(FALLBACK_STATS);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [cliInput, setCliInput] = useState("");
+  const [cliOutput, setCliOutput] = useState("");
+  const [showCli, setShowCli] = useState(false);
 
   useEffect(() => {
     const apiBase = import.meta.env.VITE_EMAIL_API_URL || "http://localhost:4000";
@@ -126,18 +137,96 @@ export function TerminalProjects() {
       });
   }, []);
 
-  const filtered =
-    activeFilter === "All"
-      ? showAll
-        ? projects
-        : projects.slice(0, 4)
-      : projects.filter((p) => p.category === activeFilter);
+  // Category + tag filters, optional A-Z sort, then the "show 4 / show all" limit
+  let list = projects.filter(
+    (p) =>
+      (activeFilter === "All" || p.category === activeFilter) &&
+      (!tagFilter || p.tags.some((t) => t.toLowerCase().includes(tagFilter)))
+  );
+  if (sortAz) list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+  const isUnfiltered = activeFilter === "All" && !tagFilter;
+  const filtered = isUnfiltered && !showAll ? list.slice(0, 4) : list;
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
       // Clipboard can be unavailable (insecure context, denied permission)
+    }
+  };
+
+  const resetAll = () => {
+    setActiveFilter("All");
+    setTagFilter("");
+    setSortAz(false);
+    setShowAll(false);
+  };
+
+  const runCommand = (raw: string) => {
+    const cmd = raw.trim();
+    const lower = cmd.toLowerCase();
+    let out = "";
+
+    if (lower === "help" || lower === "man") {
+      out =
+        '&gt; Available commands:<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-green font-bold">ls -la projects/</span> : List all repositories<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">filter &lt;tag&gt;</span> : Show projects using a technology (e.g. filter react)<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">sort</span> : Toggle A-Z ordering<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-text font-bold">reset</span> : Clear all filters and sorting<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-muted font-bold">clear</span> : Clear this output';
+    } else if (lower === "ls" || lower === "ls -la projects/" || lower === "ls projects" || lower === "ls -la") {
+      const rows = projects
+        .map(
+          (p) =>
+            `&gt; drwxr-xr-x samuel staff <span class="text-terminal-green">${escapeHtml(p.path)}</span> <span class="text-terminal-muted">[${escapeHtml(p.category)}]</span>`
+        )
+        .join("<br/>");
+      out = `&gt; total ${projects.length}<br/>${rows}`;
+    } else if (lower === "filter" || lower === "filter reset" || lower === "filter clear") {
+      setTagFilter("");
+      out = "&gt; Tag filter cleared.";
+    } else if (lower.startsWith("filter ")) {
+      const tag = lower.slice(7).trim();
+      const matches = projects.filter((p) => p.tags.some((t) => t.toLowerCase().includes(tag)));
+      setTagFilter(tag);
+      setActiveFilter("All");
+      out = matches.length
+        ? `&gt; Showing <span class="text-terminal-green font-bold">${matches.length}</span> project(s) using <span class="text-terminal-cyan">${escapeHtml(tag)}</span>`
+        : `&gt; No projects use <span class="text-red-400">${escapeHtml(tag)}</span>. Try: react, tailwind, supabase, next.js`;
+    } else if (lower === "sort") {
+      out = sortAz ? "&gt; Sorting reset to default order." : "&gt; Sorted A-Z.";
+      setSortAz(!sortAz);
+    } else if (lower === "reset") {
+      resetAll();
+      out = "&gt; Filters and sorting reset.";
+    } else if (lower === "clear") {
+      setShowCli(false);
+      setCliOutput("");
+      return;
+    } else {
+      out = `<span class="text-red-400 font-semibold">zsh: command not found: ${escapeHtml(cmd)}</span>. Type <span class="text-terminal-green">'help'</span> for reference.`;
+    }
+
+    setCliOutput(out);
+    setShowCli(true);
+  };
+
+  const handleCliSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cliInput.trim()) return;
+    runCommand(cliInput);
+    setCliInput("");
+  };
+
+  const handleCliKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setCliInput("");
+      setShowCli(false);
+      setCliOutput("");
+    } else if (e.key === "Tab") {
+      const value = cliInput.toLowerCase();
+      if (!value) return;
+      const match = CLI_COMMANDS.find((c) => c.startsWith(value) && c !== value);
+      if (match) {
+        e.preventDefault();
+        setCliInput(match);
+      }
     }
   };
 
@@ -199,14 +288,18 @@ export function TerminalProjects() {
                 <span>Workspace Analytics</span>
                 <div className="flex items-center gap-2">
                   {lastSynced && (
-                    <span className="text-terminal-green text-[10px] normal-case tracking-normal">synced {lastSynced}</span>
+                    <span className="text-terminal-green text-[10px] normal-case tracking-normal">
+                      synced {lastSynced}
+                    </span>
                   )}
                   <span className="text-terminal-cyan font-semibold">Active Cycle</span>
                 </div>
               </div>
               <div className="flex items-baseline justify-between mb-2">
                 <span className="text-xs terminal-font text-terminal-muted">Total Commits (30d):</span>
-                <span className="text-lg font-bold text-terminal-green">{stats.totalCommits30d.toLocaleString()}</span>
+                <span className="text-lg font-bold text-terminal-green">
+                  {stats.totalCommits30d.toLocaleString()}
+                </span>
               </div>
               <div className="w-full h-14 bg-terminal-bg/50 rounded p-1 flex items-end justify-between gap-1 overflow-hidden">
                 {stats.commitChart.map((h, i) => (
@@ -229,7 +322,8 @@ export function TerminalProjects() {
               </span>
               <span className="text-terminal-muted hidden sm:inline">|</span>
               <span className="text-terminal-text">
-                <span className="text-terminal-cyan font-bold">{stats.ciPassing ? `${stats.ciPassing}%` : "—"}</span> CI Passing
+                <span className="text-terminal-cyan font-bold">{stats.ciPassing ? `${stats.ciPassing}%` : "—"}</span>{" "}
+                CI Passing
               </span>
             </div>
           </div>
@@ -262,84 +356,117 @@ export function TerminalProjects() {
               </button>
             ))}
           </div>
+
+          {/* Active CLI filters */}
+          {(tagFilter || sortAz) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs terminal-font">
+              {tagFilter && (
+                <button
+                  type="button"
+                  onClick={() => setTagFilter("")}
+                  className="px-2 py-1 rounded bg-terminal-cyan/10 text-terminal-cyan hover:bg-terminal-cyan/20 transition-colors"
+                >
+                  tag: {tagFilter} ✕
+                </button>
+              )}
+              {sortAz && (
+                <button
+                  type="button"
+                  onClick={() => setSortAz(false)}
+                  className="px-2 py-1 rounded bg-terminal-cyan/10 text-terminal-cyan hover:bg-terminal-cyan/20 transition-colors"
+                >
+                  sorted A-Z ✕
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Project Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {filtered.map((project, i) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="terminal-card p-3 md:p-4 hover:border-terminal-green/30 transition-all duration-200 group min-w-0"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs terminal-font text-terminal-muted mb-2 md:mb-3">
-                <span className="text-terminal-muted font-semibold">-rwxr-xr-x 1 samuel staff</span>
-                <div className="flex flex-wrap items-center gap-2">
-                  {project.featured && (
-                    <span className="text-terminal-cyan bg-terminal-cyan/10 px-1 rounded">★ FEATURED</span>
-                  )}
-                  <span className="text-terminal-cyan bg-terminal-cyan/10 px-1 rounded">{project.category}</span>
+        {filtered.length === 0 ? (
+          <div className="terminal-card p-6 text-center text-xs terminal-font text-terminal-muted">
+            No projects match the current filters.{" "}
+            <button type="button" onClick={resetAll} className="text-terminal-green underline">
+              Reset filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {filtered.map((project, i) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="terminal-card p-3 md:p-4 hover:border-terminal-green/30 transition-all duration-200 group min-w-0"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs terminal-font text-terminal-muted mb-2 md:mb-3">
+                  <span className="text-terminal-muted font-semibold">-rwxr-xr-x 1 samuel staff</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {project.featured && (
+                      <span className="text-terminal-cyan bg-terminal-cyan/10 px-1 rounded">★ FEATURED</span>
+                    )}
+                    <span className="text-terminal-cyan bg-terminal-cyan/10 px-1 rounded">{project.category}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="mb-2 md:mb-3">
-                <h3 className="text-sm md:text-base font-bold text-terminal-green terminal-font mb-1 md:mb-2">
-                  {project.name}
-                </h3>
-                <p className="text-xs terminal-font text-terminal-muted leading-relaxed">{project.description}</p>
-              </div>
-
-              <div className="flex flex-wrap gap-1 md:gap-2 mb-3 md:mb-4 text-xs terminal-font">
-                {project.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 rounded bg-terminal-border text-terminal-cyan flex items-center gap-1"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-terminal-cyan"></span>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <div className="bg-terminal-bg/50 rounded p-2 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3 text-xs terminal-font">
-                  <a
-                    href={project.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-1 text-terminal-muted hover:text-terminal-green transition-colors"
-                  >
-                    GitHub
-                  </a>
-                  <span className="text-terminal-muted">|</span>
-                  <a
-                    href={project.external}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-1 text-terminal-muted hover:text-terminal-green transition-colors"
-                  >
-                    Live Demo
-                  </a>
+                <div className="mb-2 md:mb-3">
+                  <h3 className="text-sm md:text-base font-bold text-terminal-green terminal-font mb-1 md:mb-2">
+                    {project.name}
+                  </h3>
+                  <p className="text-xs terminal-font text-terminal-muted leading-relaxed">{project.description}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(project.github)}
-                  className="p-2 text-terminal-muted hover:text-terminal-green transition-colors"
-                  title="Copy GitHub URL"
-                  aria-label={`Copy GitHub URL for ${project.name}`}
-                >
-                  <Copy size={15} className="text-terminal-cyan" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
 
-        {/* View all: only relevant when no category filter is active */}
-        {activeFilter === "All" && (
+                <div className="flex flex-wrap gap-1 md:gap-2 mb-3 md:mb-4 text-xs terminal-font">
+                  {project.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 rounded bg-terminal-border text-terminal-cyan flex items-center gap-1"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-terminal-cyan"></span>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="bg-terminal-bg/50 rounded p-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 text-xs terminal-font">
+                    <a
+                      href={project.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-1 text-terminal-muted hover:text-terminal-green transition-colors"
+                    >
+                      GitHub
+                    </a>
+                    <span className="text-terminal-muted">|</span>
+                    <a
+                      href={project.external}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-1 text-terminal-muted hover:text-terminal-green transition-colors"
+                    >
+                      Live Demo
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(project.github)}
+                    className="p-2 text-terminal-muted hover:text-terminal-green transition-colors"
+                    title="Copy GitHub URL"
+                    aria-label={`Copy GitHub URL for ${project.name}`}
+                  >
+                    <Copy size={15} className="text-terminal-cyan" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* View all: only relevant when no category or tag filter is active */}
+        {isUnfiltered && (
           <div className="text-center mt-8 md:mt-12">
             <button
               type="button"
@@ -360,9 +487,7 @@ export function TerminalProjects() {
           className="mt-4 md:mt-6"
         >
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
+            onSubmit={handleCliSubmit}
             className="flex items-center gap-2 bg-terminal-bg p-2 md:p-3 rounded border border-terminal-border"
           >
             <div className="hidden md:flex items-center gap-1 text-sm terminal-font">
@@ -372,12 +497,15 @@ export function TerminalProjects() {
               <span className="text-terminal-muted">$</span>
             </div>
             <input
+              value={cliInput}
+              onChange={(e) => setCliInput(e.target.value)}
+              onKeyDown={handleCliKeyDown}
               autoComplete="off"
               autoCapitalize="off"
               autoCorrect="off"
               aria-label="Projects terminal input"
               className="flex-1 min-w-0 bg-transparent border-0 outline-none text-terminal-text font-mono text-sm placeholder:text-terminal-muted focus:ring-0 p-0"
-              placeholder="Type 'help', 'filter <lang>', or 'sort'..."
+              placeholder="Type 'help', 'ls -la projects/', or 'filter react'..."
               spellCheck={false}
               type="text"
             />
@@ -387,6 +515,15 @@ export function TerminalProjects() {
               id="cli-cursor"
             />
           </form>
+
+          {/* CLI Output */}
+          <div
+            className={`flex-col gap-1 p-3 bg-terminal-bg rounded border border-terminal-border mt-2 text-xs terminal-font text-terminal-text wrap-break-word ${
+              showCli ? "flex" : "hidden"
+            }`}
+            dangerouslySetInnerHTML={{ __html: cliOutput }}
+          />
+
           <div
             className="text-xs terminal-font text-terminal-muted flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between pt-1"
             id="cli-feedback"

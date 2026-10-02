@@ -9,8 +9,29 @@ export function getSavedAccent(): string {
   }
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const m = hex.replace("#", "").match(/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return "#" + [r, g, b].map((x) => Math.round(x).toString(16).padStart(2, "0")).join("");
+}
+
+function lighten(hex: string, amount: number): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  return rgbToHex(
+    rgb.r + (255 - rgb.r) * amount,
+    rgb.g + (255 - rgb.g) * amount,
+    rgb.b + (255 - rgb.b) * amount
+  );
+}
+
 export function applyAccent(hex: string) {
-  document.documentElement.style.setProperty("--terminal-green", hex);
+  const root = document.documentElement;
+  root.style.setProperty("--terminal-green", hex);
+  root.style.setProperty("--terminal-cyan", lighten(hex, 0.15));
 }
 
 export function setAccent(hex: string) {

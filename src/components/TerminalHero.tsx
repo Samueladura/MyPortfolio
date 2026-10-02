@@ -80,6 +80,18 @@ const shortcuts = [
   { cmd: "uptime && uname -a", label: "Arch kernel", icon: "info", color: "text-terminal-green" },
 ];
 
+// Your real projects (same entries as TerminalProjects), used by the `ls` / `filter` / `sort` commands.
+const projects = [
+  { name: "Axiomtracker", path: "Axiomtracker/", category: "Web App", tags: ["React", "Supabase", "Node.js/Express", "Tailwind"] },
+  { name: "Alivio", path: "Alivio/", category: "Personalized guidance", tags: ["TypeScript", "Storybook", "Figma", "Tailwind"] },
+  { name: "eStudy", path: "eStudy/", category: "Study App", tags: ["Next.js", "Tailwind CSS"] },
+  { name: "Gopherscents", path: "Gopherscents/", category: "Commercial website", tags: ["Next.js", "My SQL", "PHP", "Tailwind CSS"] },
+  { name: "FinanceOS", path: "FinanceOS/", category: "FinTech", tags: ["React", "Supabase", "Tailwind"] },
+];
+
+// Used for Tab autocomplete in the terminal
+const CLI_COMMANDS = ["help", "man", "ls -la projects/", "filter ", "sort", "reset", "clear", "theme "];
+
 // Clicking a swatch sets the site's accent color. The black swatch resets to the default theme.
 const palette = [
   { bg: "bg-[#0d1117]", hex: "#0d1117", label: "Reset", reset: true },
@@ -100,6 +112,9 @@ const telemetry = [
 ];
 
 const MAIL_HREF = "mailto:babayemiayomide87@gmail.com?subject=Inquiry%20from%20Portfolio%20CLI";
+
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
 type Row = [label: string, value: string];
 
@@ -181,6 +196,55 @@ function useSystemInfo(): Row[] {
   ];
 }
 
+interface HeapStats {
+  used: number;
+  limit: number;
+}
+
+// performance.memory exists in Chromium browsers only (Chrome, Edge, Opera, Brave).
+function readHeap(): HeapStats | null {
+  const mem = (
+    performance as Performance & { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }
+  ).memory;
+  return mem ? { used: mem.usedJSHeapSize, limit: mem.jsHeapSizeLimit } : null;
+}
+
+// Lives in its own component so the 5-second refresh doesn't re-render the whole hero.
+function MemoryBar() {
+  const [heap, setHeap] = useState<HeapStats | null>(readHeap);
+
+  useEffect(() => {
+    if (!readHeap()) return;
+    const t = setInterval(() => setHeap(readHeap()), 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!heap) {
+    return (
+      <div className="w-full bg-terminal-bg p-2 rounded text-xs terminal-font text-terminal-muted mt-2">
+        JS HEAP: not exposed by this browser
+      </div>
+    );
+  }
+
+  const mb = (n: number) => `${Math.round(n / 1048576)} MB`;
+  const pct = Math.min(100, (heap.used / heap.limit) * 100);
+
+  return (
+    <div className="w-full bg-terminal-bg p-2 rounded flex flex-col gap-1 mt-2">
+      <div className="flex justify-between gap-2 text-xs terminal-font text-terminal-muted">
+        <span>JS HEAP</span>
+        <span>
+          {pct.toFixed(1)}% USED · {mb(heap.used)} / {mb(heap.limit)}
+        </span>
+      </div>
+      <div className="w-full bg-terminal-border h-2 rounded overflow-hidden">
+        <div className="bg-terminal-cyan h-full transition-all duration-500" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function PromptLine({ command }: { command: string }) {
   return (
     <div className="flex items-center gap-2 mb-3 md:mb-4 text-xs md:text-sm terminal-font overflow-x-auto whitespace-nowrap">
@@ -196,6 +260,9 @@ function PromptLine({ command }: { command: string }) {
 export function TerminalHero() {
   const [cliOutput, setCliOutput] = useState<string>("");
   const [showCli, setShowCli] = useState(false);
+  const [showProjects, setShowProjects] = useState(false);
+  const [tagFilter, setTagFilter] = useState("");
+  const [sortAz, setSortAz] = useState(false);
   const [accent, setAccentState] = useState<string>(getSavedAccent());
   const [themeNote, setThemeNote] = useState<string | null>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -203,6 +270,12 @@ export function TerminalHero() {
   const systemInfo = useSystemInfo();
 
   useEffect(() => () => clearTimeout(noteTimer.current), []);
+
+  // Projects shown by the terminal after filter / sort
+  let visibleProjects = projects.filter(
+    (p) => !tagFilter || p.tags.some((t) => t.toLowerCase().includes(tagFilter))
+  );
+  if (sortAz) visibleProjects = [...visibleProjects].sort((a, b) => a.name.localeCompare(b.name));
 
   const applyTheme = (swatch: (typeof palette)[number]) => {
     const hex = swatch.reset ? DEFAULT_ACCENT : swatch.hex;
@@ -216,9 +289,38 @@ export function TerminalHero() {
   const dispatchCLI = (cmd: string) => {
     const clean = cmd.toLowerCase().trim();
     let output = "";
-    if (clean === "help") {
+    if (clean === "help" || clean === "man") {
       output =
-        '&gt; Available executable commands:<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-green font-bold">ls -la projects/</span> : Inspect GitHub repository portfolio<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">cat bio.md</span> : Read full background summary<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">cat experience.log</span> : View 8+ years engineering tenure<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-text font-bold">mail -s "Hire Me"</span> : Open primary email client<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-green font-bold">theme &lt;color&gt;</span> : Change the site color (red, yellow, cyan, magenta, white, reset)<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-muted font-bold">clear</span> : Reset screen buffer';
+        '&gt; Available executable commands:<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-green font-bold">ls -la projects/</span> : List all repositories<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">filter &lt;tag&gt;</span> : Show projects using a technology (e.g. filter react)<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">sort</span> : Toggle A-Z ordering<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-text font-bold">reset</span> : Clear all filters and sorting<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">cat bio.md</span> : Read full background summary<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-cyan font-bold">cat experience.log</span> : View 8+ years engineering tenure<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-text font-bold">mail -s "Hire Me"</span> : Open primary email client<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-green font-bold">theme &lt;color&gt;</span> : Change the site color (red, yellow, cyan, magenta, white, reset)<br/>&nbsp;&nbsp;&bull; <span class="text-terminal-muted font-bold">clear</span> : Clear this output';
+    } else if (
+      clean === "ls" ||
+      clean === "ls -la" ||
+      clean === "ls projects" ||
+      clean === "ls -la projects" ||
+      clean === "ls -la projects/"
+    ) {
+      output = `&gt; total ${projects.length}`;
+      setShowProjects(true);
+    } else if (clean === "filter" || clean === "filter reset" || clean === "filter clear") {
+      setTagFilter("");
+      output = "&gt; Tag filter cleared.";
+      setShowProjects(true);
+    } else if (clean.startsWith("filter ")) {
+      const tag = clean.slice(7).trim();
+      const matches = projects.filter((p) => p.tags.some((t) => t.toLowerCase().includes(tag)));
+      setTagFilter(tag);
+      setShowProjects(true);
+      output = matches.length
+        ? `&gt; Showing <span class="text-terminal-green font-bold">${matches.length}</span> project(s) using <span class="text-terminal-cyan">${escapeHtml(tag)}</span>`
+        : `&gt; No projects use <span class="text-red-400">${escapeHtml(tag)}</span>. Try: react, tailwind, supabase, next.js`;
+    } else if (clean === "sort") {
+      output = sortAz ? "&gt; Sorting reset to default order." : "&gt; Sorted A-Z.";
+      setSortAz(!sortAz);
+      setShowProjects(true);
+    } else if (clean === "reset") {
+      setTagFilter("");
+      setSortAz(false);
+      output = "&gt; Filters and sorting reset.";
     } else if (clean.startsWith("theme")) {
       const name = clean.replace("theme", "").trim();
       const swatch = palette.find(
@@ -232,6 +334,7 @@ export function TerminalHero() {
       }
     } else if (clean.includes("clear")) {
       setShowCli(false);
+      setShowProjects(false);
       setCliOutput("");
       return;
     } else if (clean.includes("mail")) {
@@ -240,9 +343,6 @@ export function TerminalHero() {
       setTimeout(() => {
         window.location.href = MAIL_HREF;
       }, 500);
-    } else if (clean.includes("projects")) {
-      output =
-        "&gt; drwxr-xr-x 8 samuel staff 256B May 14 09:30 hyper-raft-consensus<br/>&gt; drwxr-xr-x 12 samuel staff 384B Jun 22 14:12 k8s-mesh-operator<br/>&gt; drwxr-xr-x 6 samuel staff 192B Jul 01 19:44 turbo-wasm-engine";
     } else if (clean.includes("resume")) {
       output =
         '&gt; HTTP/2 200 OK<br/>&gt; Content-Type: application/pdf [Content-Length: 142.6KB]<br/>&gt; Resume download completed. Link: <a href="/Babayemi_Ayomide_Samuel_Resume.pdf" class="underline text-terminal-cyan" target="_blank" rel="noopener noreferrer">Babayemi_Ayomide_Samuel_Resume.pdf</a>';
@@ -250,7 +350,7 @@ export function TerminalHero() {
       output =
         "&gt; Linux devbox 6.8.9-zen1-1-zen #1 ZEN SMP PREEMPT_DYNAMIC SMP PREEMPT Tue, 02 May 2024 16:32:01 +0000 x86_64 GNU/Linux";
     } else {
-      output = `&gt; zsh: command executed: '${cmd}'<br/>&gt; Process exited with code 0. Type 'help' for available CLI directives.`;
+      output = `&gt; zsh: command not found: ${escapeHtml(cmd)}<br/>&gt; Type 'help' for available CLI directives.`;
     }
     setCliOutput(output);
     setShowCli(true);
@@ -262,6 +362,24 @@ export function TerminalHero() {
     if (!input || !input.value.trim()) return;
     dispatchCLI(input.value.trim());
     input.value = "";
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    if (e.key === "Escape") {
+      input.value = "";
+      setShowCli(false);
+      setShowProjects(false);
+      setCliOutput("");
+    } else if (e.key === "Tab") {
+      const value = input.value.toLowerCase();
+      if (!value) return; // let Tab move focus normally when the box is empty
+      const match = CLI_COMMANDS.find((c) => c.startsWith(value) && c !== value);
+      if (match) {
+        e.preventDefault();
+        input.value = match;
+      }
+    }
   };
 
   const handleShortcut = (cmd: string) => {
@@ -277,7 +395,7 @@ export function TerminalHero() {
   };
 
   return (
-    <section className="relative py-8 md:py-20 bg-terminal-bg">
+    <section id="hero" className="relative py-8 md:py-20 bg-terminal-bg">
       <div className="max-w-6xl mx-auto px-3 md:px-6">
         {/* Section header */}
         <motion.div
@@ -405,16 +523,7 @@ export function TerminalHero() {
                     </div>
                   ))}
                 </div>
-                <div className="w-full bg-terminal-bg p-2 rounded flex flex-col gap-1 mt-2">
-                  <div className="flex justify-between text-xs terminal-font text-terminal-muted">
-                    <span>MEM ALLOC</span>
-                    <span>38.5% USED</span>
-                  </div>
-                  <div className="w-full bg-terminal-border h-2 rounded overflow-hidden flex">
-                    <div className="bg-terminal-cyan h-full" style={{ width: "38.5%" }} />
-                    <div className="bg-terminal-border h-full" style={{ width: "61.5%" }} />
-                  </div>
-                </div>
+                <MemoryBar />
               </div>
             </div>
           </div>
@@ -553,12 +662,13 @@ export function TerminalHero() {
             <div className="relative flex-1 min-w-0 flex items-center">
               <input
                 ref={inputRef}
+                onKeyDown={handleKeyDown}
                 autoComplete="off"
                 autoCapitalize="off"
                 autoCorrect="off"
                 aria-label="Terminal command input"
                 className="w-full bg-transparent border-0 outline-none text-terminal-text font-mono text-sm placeholder:text-terminal-muted focus:ring-0 p-0"
-                placeholder="type commands ('help', 'theme red', 'clear')..."
+                placeholder="type commands ('help', 'ls -la projects/', 'filter react')..."
                 spellCheck={false}
                 type="text"
               />
@@ -583,6 +693,70 @@ export function TerminalHero() {
             }`}
           >
             <span dangerouslySetInnerHTML={{ __html: cliOutput }} />
+          </div>
+
+          {/* Project results: removable filter chips, repo list, empty state */}
+          {showProjects && (
+            <div className="mt-2 p-3 bg-terminal-bg rounded border border-terminal-border text-xs terminal-font">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-terminal-cyan font-semibold">~/projects</span>
+                <span className="text-terminal-muted">
+                  {visibleProjects.length} of {projects.length}
+                </span>
+                {tagFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setTagFilter("")}
+                    className="px-2 py-1 rounded bg-terminal-cyan/10 text-terminal-cyan hover:bg-terminal-cyan/20 transition-colors"
+                  >
+                    tag: {tagFilter} ✕
+                  </button>
+                )}
+                {sortAz && (
+                  <button
+                    type="button"
+                    onClick={() => setSortAz(false)}
+                    className="px-2 py-1 rounded bg-terminal-cyan/10 text-terminal-cyan hover:bg-terminal-cyan/20 transition-colors"
+                  >
+                    sorted A-Z ✕
+                  </button>
+                )}
+              </div>
+
+              {visibleProjects.length === 0 ? (
+                <div className="text-terminal-muted">
+                  No projects match the current filters.{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTagFilter("");
+                      setSortAz(false);
+                    }}
+                    className="text-terminal-green underline"
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1 overflow-x-auto">
+                  {visibleProjects.map((p) => (
+                    <div key={p.name} className="whitespace-nowrap text-terminal-muted">
+                      drwxr-xr-x samuel staff <span className="text-terminal-green font-medium">{p.path}</span>{" "}
+                      <span className="text-terminal-cyan">[{p.category}]</span>{" "}
+                      <span>{p.tags.join(", ")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="pt-1 text-xs terminal-font text-terminal-muted flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Type <kbd className="bg-terminal-border px-1 rounded text-terminal-green">help</kbd> for commands, press{" "}
+              <kbd className="bg-terminal-border px-1 rounded text-terminal-cyan">Tab</kbd> to autocomplete
+            </span>
+            <span className="hidden sm:inline">ESC to clear</span>
           </div>
         </motion.div>
       </div>
