@@ -92,19 +92,6 @@ const palette = [
   { bg: "bg-[#e5e7eb]", hex: "#e5e7eb", label: "White" },
 ];
 
-const systemInfo = [
-  ["OS:", "Arch Linux x86_64 / Darwin 23.4.0"],
-  ["Host:", "MacBookPro M3 Max"],
-  ["Kernel:", "6.8.9-zen1"],
-  ["Uptime:", "42d, 13h, 37m"],
-  ["Shell:", "zsh 5.9 (x86_64-apple-darwin)"],
-  ["Resolution:", "3456x2234 @ 120Hz"],
-  ["WM:", "Aerospace / Tmux"],
-  ["Terminal:", "Alacritty / WezTerm"],
-  ["CPU:", "Apple M3 Max (16) @ 4.05GHz"],
-  ["Memory:", "14210MiB / 36864MiB"],
-];
-
 const telemetry = [
   ["Production Nodes", "1,480+", "text-terminal-green"],
   ["P99 Query Latency", "&lt;1.8ms", "text-terminal-green"],
@@ -113,6 +100,86 @@ const telemetry = [
 ];
 
 const MAIL_HREF = "mailto:babayemiayomide87@gmail.com?subject=Inquiry%20from%20Portfolio%20CLI";
+
+type Row = [label: string, value: string];
+
+interface NavigatorExtras extends Navigator {
+  deviceMemory?: number;
+  userAgentData?: { platform?: string };
+}
+
+function parseOS(ua: string): string {
+  if (/Windows NT 10/.test(ua)) return "Windows 10/11";
+  if (/Windows/.test(ua)) return "Windows";
+  const android = ua.match(/Android ([\d.]+)/);
+  if (android) return `Android ${android[1]}`;
+  const ios = ua.match(/OS (\d+)[_\d]* like Mac OS X/);
+  if (ios) return `iOS ${ios[1]}`;
+  if (/Mac OS X/.test(ua)) return "macOS";
+  if (/CrOS/.test(ua)) return "ChromeOS";
+  if (/Linux/.test(ua)) return "Linux";
+  return "Unknown OS";
+}
+
+function parseBrowser(ua: string): string {
+  const pick = (re: RegExp, name: string) => {
+    const m = ua.match(re);
+    return m ? `${name} ${m[1]}` : null;
+  };
+  return (
+    pick(/Edg\/(\d+)/, "Edge") ||
+    pick(/OPR\/(\d+)/, "Opera") ||
+    pick(/Firefox\/(\d+)/, "Firefox") ||
+    pick(/Chrome\/(\d+)/, "Chrome") ||
+    pick(/Version\/(\d+).*Safari/, "Safari") ||
+    "Unknown browser"
+  );
+}
+
+function parseDevice(ua: string): string {
+  if (/iPad|Tablet/.test(ua)) return "Tablet";
+  if (/Mobi|Android|iPhone/.test(ua)) return "Mobile device";
+  return "Desktop / Laptop";
+}
+
+function formatUptime(ms: number): string {
+  const totalMin = Math.floor(ms / 60000);
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  return `${d}d, ${h}h, ${m}m`;
+}
+
+function useSystemInfo(): Row[] {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = Date.now();
+    const t = setInterval(() => setElapsed(Date.now() - start), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const nav = navigator as NavigatorExtras;
+  const ua = nav.userAgent;
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.round(window.screen.width * dpr);
+  const height = Math.round(window.screen.height * dpr);
+  const cores = nav.hardwareConcurrency;
+  const memory = nav.deviceMemory;
+
+  return [
+    ["OS:", parseOS(ua)],
+    ["Host:", parseDevice(ua)],
+    ["Kernel:", nav.userAgentData?.platform || nav.platform || "unknown"],
+    ["Uptime:", formatUptime(elapsed)],
+    ["Shell:", parseBrowser(ua)],
+    ["Resolution:", `${width}x${height} @ ${dpr}x`],
+    ["WM:", Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"],
+    ["Terminal:", nav.language || "unknown"],
+    ["CPU:", cores ? `${cores} logical cores` : "unknown"],
+    ["Memory:", memory ? `${memory >= 8 ? "8+" : memory} GB` : "not exposed"],
+  ];
+}
 
 function PromptLine({ command }: { command: string }) {
   return (
@@ -129,10 +196,11 @@ function PromptLine({ command }: { command: string }) {
 export function TerminalHero() {
   const [cliOutput, setCliOutput] = useState<string>("");
   const [showCli, setShowCli] = useState(false);
-  const [accent, setAccentState] = useState<string>(getSavedAccent);
+  const [accent, setAccentState] = useState<string>(getSavedAccent());
   const [themeNote, setThemeNote] = useState<string | null>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
+  const systemInfo = useSystemInfo();
 
   useEffect(() => () => clearTimeout(noteTimer.current), []);
 
