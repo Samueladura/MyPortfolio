@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
@@ -9,27 +9,83 @@ const navLinks = [
   { label: "~/contact", href: "#contact" },
 ];
 
+// deviceMemory is a Chromium-only API, so it isn't in TypeScript's built-in Navigator type.
+interface NavigatorWithMemory extends Navigator {
+  deviceMemory?: number;
+}
+
+function parseOS(ua: string): string {
+  if (/Windows NT 10/.test(ua)) return "Windows 10/11";
+  if (/Windows/.test(ua)) return "Windows";
+  const android = ua.match(/Android ([\d.]+)/);
+  if (android) return `Android ${android[1]}`;
+  const ios = ua.match(/OS (\d+)[_\d]* like Mac OS X/);
+  if (ios) return `iOS ${ios[1]}`;
+  if (/Mac OS X/.test(ua)) return "macOS";
+  if (/CrOS/.test(ua)) return "ChromeOS";
+  if (/Linux/.test(ua)) return "Linux";
+  return "Unknown OS";
+}
+
+function parseBrowser(ua: string): string {
+  const pick = (re: RegExp, name: string) => {
+    const m = ua.match(re);
+    return m ? `${name} ${m[1]}` : null;
+  };
+  return (
+    pick(/Edg\/(\d+)/, "Edge") ||
+    pick(/OPR\/(\d+)/, "Opera") ||
+    pick(/Firefox\/(\d+)/, "Firefox") ||
+    pick(/Chrome\/(\d+)/, "Chrome") ||
+    pick(/Version\/(\d+).*Safari/, "Safari") ||
+    "Unknown browser"
+  );
+}
+
+function formatUptime(ms: number): string {
+  const totalMin = Math.floor(ms / 60000);
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  return `${d}d, ${h}h, ${m}m`;
+}
+
+// Read once from the visitor's browser. Nothing is sent anywhere.
+function readSystemInfo() {
+  const nav = navigator as NavigatorWithMemory;
+  const ua = nav.userAgent;
+  return {
+    host: parseOS(ua).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    shell: parseBrowser(ua),
+    cores: nav.hardwareConcurrency || null,
+    ramGB: nav.deviceMemory ?? null,
+  };
+}
+
 export function TerminalNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("hero");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [headerOffset, setHeaderOffset] = useState(0);
+  const [pageLoadedAt] = useState(() => Date.now());
+  const [uptime, setUptime] = useState("0d, 0h, 0m");
+  const [info] = useState(readSystemInfo);
 
-  // Measure the fixed header height dynamically
+  const statusRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  // Measure the fixed header height. Observing only the status bar and the tab row
+  // (not the mobile menu) keeps the offset stable while the menu is open.
   useEffect(() => {
-    const measure = () => {
-      const statusBar = document.querySelector(".status-bar");
-      const tabBar = document.querySelector('[class*="fixed top-12"]');
-      if (statusBar && tabBar) {
-        const statusHeight = statusBar.getBoundingClientRect().height;
-        const tabHeight = tabBar.getBoundingClientRect().height;
-        setHeaderOffset(statusHeight + tabHeight);
-      }
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    const status = statusRef.current;
+    const row = rowRef.current;
+    if (!status || !row) return;
+    const measure = () => setHeaderOffset(status.offsetHeight + row.offsetHeight + 1);
+    const observer = new ResizeObserver(measure);
+    observer.observe(status);
+    observer.observe(row);
+    return () => observer.disconnect();
   }, []);
 
   // Scroll spy
@@ -49,11 +105,15 @@ export function TerminalNavbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [headerOffset]);
 
-  // Clock
+  // Clock and uptime
   useEffect(() => {
-    const t = setInterval(() => setCurrentTime(new Date()), 15000);
-    return () => clearInterval(t);
-  }, []);
+    const clock = setInterval(() => setCurrentTime(new Date()), 15000);
+    const up = setInterval(() => setUptime(formatUptime(Date.now() - pageLoadedAt)), 30000);
+    return () => {
+      clearInterval(clock);
+      clearInterval(up);
+    };
+  }, [pageLoadedAt]);
 
   // Close the menu on Escape or when the viewport grows to desktop size
   useEffect(() => {
@@ -71,16 +131,19 @@ export function TerminalNavbar() {
   }, []);
 
   const handleNav = (href: string) => {
-    const id = href.slice(1);
-    const el = document.getElementById(id);
+    const el = document.getElementById(href.slice(1));
     if (!el) return;
+    const menuWasOpen = mobileOpen;
     setMobileOpen(false);
-    // Delay the scroll until the mobile menu closing animation (250ms) finishes
-    // so getBoundingClientRect() reads the settled layout instead of mid-transition.
-    setTimeout(() => {
-      const top = el.getBoundingClientRect().top + window.scrollY - headerOffset + 8;
-      window.scrollTo({ top, behavior: "smooth" });
-    }, 300);
+    // If the mobile menu was open, wait for its 250ms closing animation so the
+    // layout has settled before measuring. On desktop, scroll immediately.
+    setTimeout(
+      () => {
+        const top = el.getBoundingClientRect().top + window.scrollY - headerOffset + 8;
+        window.scrollTo({ top, behavior: "smooth" });
+      },
+      menuWasOpen ? 300 : 0
+    );
   };
 
   const formatTime = (date: Date) =>
@@ -89,7 +152,7 @@ export function TerminalNavbar() {
   return (
     <>
       {/* Top Status Bar */}
-      <div className="fixed top-0 left-0 right-0 z-60 status-bar">
+      <div ref={statusRef} className="fixed top-0 left-0 right-0 z-60 status-bar">
         <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
@@ -101,21 +164,25 @@ export function TerminalNavbar() {
             <div className="hidden sm:flex items-center gap-2 text-xs terminal-font">
               <span className="text-terminal-green">samuel</span>
               <span className="text-terminal-muted">@</span>
-              <span className="text-terminal-text">macbook-pro</span>
+              <span className="text-terminal-text">{info.host}</span>
               <span className="text-terminal-muted">:</span>
               <span className="text-terminal-cyan">~</span>
-              <span className="text-terminal-muted">(zsh)</span>
-              <span className="text-terminal-muted ml-2">UP: 42d 13h</span>
+              <span className="text-terminal-muted">({info.shell})</span>
+              <span className="text-terminal-muted ml-2">UP: {uptime}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs terminal-font">
             <div className="hidden sm:flex items-center gap-3">
               <span className="text-terminal-muted">
-                CPU: <span className="text-terminal-green">12%</span>
+                CPU:{" "}
+                <span className="text-terminal-green">{info.cores ? `${info.cores} cores` : "n/a"}</span>
               </span>
               <span className="text-terminal-muted">
-                RAM: <span className="text-terminal-green">4.8GB</span>
+                RAM:{" "}
+                <span className="text-terminal-green">
+                  {info.ramGB ? `${info.ramGB >= 8 ? "8+" : info.ramGB}GB` : "n/a"}
+                </span>
               </span>
               <span className="text-terminal-muted">
                 GIT: <span className="text-terminal-green">main*</span>
@@ -146,7 +213,7 @@ export function TerminalNavbar() {
             : "bg-terminal-bg/80 backdrop-blur-md border-b border-terminal-border/50"
         }`}
       >
-        <div className="w-full md:max-w-6xl md:mx-auto px-4 py-2 flex items-center">
+        <div ref={rowRef} className="w-full md:max-w-6xl md:mx-auto px-4 py-2 flex items-center">
           <nav className="hidden md:flex items-center gap-1 mr-auto">
             {navLinks.map((link) => {
               const isActive = activeSection === link.href.slice(1);
